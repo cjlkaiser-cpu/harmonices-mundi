@@ -139,8 +139,26 @@
             color: #fbbf24;
         }
 
-        .mode-btn:hover {
+        .mode-btn:hover, .scale-btn:hover {
             border-color: #fbbf24;
+        }
+
+        .scale-btn {
+            flex: 1;
+            padding: 8px 6px;
+            font-size: 0.7rem;
+            border: 1px solid #333;
+            border-radius: 5px;
+            background: #1a1a3e;
+            color: #aaa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .scale-btn.active {
+            background: rgba(74, 222, 128, 0.2);
+            border-color: #4ade80;
+            color: #4ade80;
         }
 
         /* Volumen master */
@@ -292,6 +310,67 @@
             color: #fbbf24;
         }
 
+        .concert-btn {
+            width: 100%;
+            margin-top: 12px;
+            padding: 12px;
+            font-size: 0.9rem;
+            border: 1px solid #fbbf24;
+            border-radius: 6px;
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(251, 191, 36, 0.05));
+            color: #fbbf24;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .concert-btn:hover {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.1));
+            transform: scale(1.02);
+        }
+
+        /* Fullscreen mode */
+        .fullscreen {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 9999 !important;
+            background: #000 !important;
+        }
+
+        .fullscreen .panel {
+            display: none;
+        }
+
+        .fullscreen .simulacion {
+            width: 100%;
+            height: 100%;
+        }
+
+        .fullscreen #canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .exit-fullscreen {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid #fbbf24;
+            border-radius: 6px;
+            color: #fbbf24;
+            cursor: pointer;
+            z-index: 10000;
+            font-size: 0.9rem;
+        }
+
+        .exit-fullscreen:hover {
+            background: rgba(251, 191, 36, 0.2);
+        }
+
         /* Info histórica */
         .kepler-quote {
             margin-top: 15px;
@@ -317,19 +396,22 @@
         .spectrum {
             margin-top: 12px;
             height: 60px;
-            background: rgba(0,0,0,0.3);
+            background: rgba(0,0,0,0.5);
             border-radius: 6px;
             display: flex;
             align-items: flex-end;
-            justify-content: space-around;
-            padding: 5px;
+            justify-content: center;
+            gap: 2px;
+            padding: 5px 8px;
         }
 
         .spectrum-bar {
-            width: 20px;
+            flex: 1;
+            max-width: 8px;
+            min-height: 2px;
             background: linear-gradient(to top, #4ade80, #fbbf24);
-            border-radius: 2px 2px 0 0;
-            transition: height 0.1s;
+            border-radius: 1px 1px 0 0;
+            transition: height 0.05s ease-out;
         }
 
         /* Checkbox group */
@@ -495,6 +577,8 @@
                 <button class="preset-btn" data-preset="tritone">Tritono</button>
             </div>
 
+            <button class="concert-btn" id="concertBtn">🎭 Concert Hall</button>
+
             <div class="speed-control">
                 <label>Velocidad</label>
                 <input type="range" id="speed" min="1" max="365" value="30">
@@ -509,6 +593,13 @@
             <div class="checkbox-group">
                 <input type="checkbox" id="showLabels" checked>
                 <label for="showLabels">Mostrar nombres</label>
+            </div>
+
+            <h3>Escala Visual</h3>
+            <div class="mode-selector">
+                <button class="scale-btn" data-scale="linear">Lineal</button>
+                <button class="scale-btn active" data-scale="log">Logarítmica</button>
+                <button class="scale-btn" data-scale="adaptive">Adaptativa</button>
             </div>
 
             <div class="fecha">
@@ -534,8 +625,8 @@
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2;
+        let cx = canvas.width / 2;
+        let cy = canvas.height / 2;
 
         // Datos planetarios con intervalos de Kepler
         const planetas = [
@@ -637,12 +728,18 @@
         let masterVolume = 0.5;
         let showOrbits = true;
         let showLabels = true;
+        let scaleMode = 'log';  // 'linear', 'log', 'adaptive'
+        let concertMode = false;
+        let trails = planetas.map(() => []);
+        const maxTrailLength = 150;
 
         // Audio
         let audioCtx = null;
         const oscillators = [];
         const gains = [];
-        const analyser = null;
+        let analyser = null;
+        let analyserData = null;
+        let masterGain = null;
         const planetStates = planetas.map(() => ({ enabled: true, volume: 0.7 }));
 
         // Presets
@@ -661,6 +758,20 @@
 
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+            // Master gain node
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = masterVolume;
+
+            // Analyser para FFT real
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 256;
+            analyser.smoothingTimeConstant = 0.8;
+            analyserData = new Uint8Array(analyser.frequencyBinCount);
+
+            // Conectar master → analyser → destino
+            masterGain.connect(analyser);
+            analyser.connect(audioCtx.destination);
+
             planetas.forEach((planeta, i) => {
                 const osc = audioCtx.createOscillator();
                 osc.type = planeta.waveform || 'sine';
@@ -670,7 +781,7 @@
                 gain.gain.value = 0;
 
                 osc.connect(gain);
-                gain.connect(audioCtx.destination);
+                gain.connect(masterGain);  // Conectar al master, no al destino
                 osc.start();
 
                 oscillators[i] = osc;
@@ -743,6 +854,34 @@
             });
         }
 
+        // Función de transformación de distancia según escala
+        function transformDistance(r) {
+            // Adaptar radio máximo al tamaño del canvas
+            const maxR = Math.min(canvas.width, canvas.height) * 0.42;
+            const maxUA = 32;  // Neptuno ~ 30 UA
+
+            switch(scaleMode) {
+                case 'linear':
+                    // Escala lineal simple
+                    return r * (maxR / maxUA);
+
+                case 'log':
+                    // Escala logarítmica: expande interiores, comprime exteriores
+                    // log(1 + r) normalizado
+                    const logMax = Math.log(1 + maxUA);
+                    return (Math.log(1 + r) / logMax) * maxR;
+
+                case 'adaptive':
+                    // Escala adaptativa basada en planetas activos
+                    // Usa raíz cuadrada para balance
+                    const sqrtMax = Math.sqrt(maxUA);
+                    return (Math.sqrt(r) / sqrtMax) * maxR;
+
+                default:
+                    return r * 12;
+            }
+        }
+
         // Dibujar estrellas
         function drawStars() {
             ctx.fillStyle = '#fff';
@@ -787,11 +926,12 @@
 
         // Dibujar planeta
         function drawPlanet(planeta, index) {
-            const scale = 12;  // UA a píxeles
             const pos = getOrbitalPosition(planeta.a, planeta.e, planeta.T, simDays);
 
-            const px = cx + pos.x * scale;
-            const py = cy - pos.y * scale;
+            // Transformar coordenadas polares a cartesianas con escala
+            const scaledR = transformDistance(pos.r);
+            const px = cx + scaledR * Math.cos(pos.theta);
+            const py = cy - scaledR * Math.sin(pos.theta);
 
             // Órbita
             if (showOrbits) {
@@ -799,8 +939,9 @@
                 for (let t = 0; t <= 360; t += 2) {
                     const angle = t * Math.PI / 180;
                     const r = planeta.a * (1 - planeta.e * planeta.e) / (1 + planeta.e * Math.cos(angle));
-                    const ox = cx + r * Math.cos(angle) * scale;
-                    const oy = cy - r * Math.sin(angle) * scale;
+                    const scaledOrbitR = transformDistance(r);
+                    const ox = cx + scaledOrbitR * Math.cos(angle);
+                    const oy = cy - scaledOrbitR * Math.sin(angle);
                     if (t === 0) ctx.moveTo(ox, oy);
                     else ctx.lineTo(ox, oy);
                 }
@@ -810,14 +951,36 @@
                 ctx.stroke();
             }
 
+            // Trails en concert mode
+            if (concertMode && running) {
+                trails[index].push({ x: px, y: py });
+                if (trails[index].length > maxTrailLength) {
+                    trails[index].shift();
+                }
+
+                // Dibujar trail con gradiente de opacidad
+                if (trails[index].length > 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(trails[index][0].x, trails[index][0].y);
+                    for (let i = 1; i < trails[index].length; i++) {
+                        ctx.lineTo(trails[index][i].x, trails[index][i].y);
+                    }
+                    ctx.strokeStyle = planeta.color;
+                    ctx.lineWidth = 2;
+                    ctx.globalAlpha = 0.6;
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                }
+            }
+
             // Indicador de sonido (aura si está sonando)
             if (planetStates[index].enabled && running) {
                 const freq = getFrequency(planeta, pos, index);
                 const intensity = Math.min(1, freq / 500);
-                const auraRadius = planeta.radius + 5 + intensity * 8;
+                const auraRadius = planeta.radius + 5 + intensity * (concertMode ? 15 : 8);
 
                 const auraGradient = ctx.createRadialGradient(px, py, planeta.radius, px, py, auraRadius);
-                auraGradient.addColorStop(0, planeta.color + '60');
+                auraGradient.addColorStop(0, planeta.color + '80');
                 auraGradient.addColorStop(1, planeta.color + '00');
 
                 ctx.beginPath();
@@ -867,6 +1030,10 @@
 
         // Dibujar todo
         function draw() {
+            // Actualizar centro según tamaño actual del canvas
+            cx = canvas.width / 2;
+            cy = canvas.height / 2;
+
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -878,17 +1045,24 @@
                 positions[i] = drawPlanet(planetas[i], i);
             }
 
-            // Escala
-            const scale = 12;
+            // Escala visual (referencia de 1 UA y 5 UA)
             ctx.strokeStyle = 'rgba(255,255,255,0.2)';
             ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(20, canvas.height - 30);
-            ctx.lineTo(20 + scale * 5, canvas.height - 30);
-            ctx.stroke();
             ctx.font = "10px Inter";
             ctx.fillStyle = 'rgba(255,255,255,0.4)';
-            ctx.fillText('5 UA', 20 + scale * 2.5 - 10, canvas.height - 15);
+
+            // Dibujar marca de 1 UA
+            const oneUA = transformDistance(1);
+            ctx.beginPath();
+            ctx.moveTo(20, canvas.height - 30);
+            ctx.lineTo(20 + oneUA, canvas.height - 30);
+            ctx.stroke();
+            ctx.fillText('1 UA', 20 + oneUA/2 - 10, canvas.height - 35);
+
+            // Indicador de modo de escala
+            const modeLabels = { linear: 'Lineal', log: 'Logarítmica', adaptive: 'Adaptativa' };
+            ctx.fillStyle = 'rgba(251, 191, 36, 0.6)';
+            ctx.fillText(`Escala: ${modeLabels[scaleMode]}`, 20, canvas.height - 15);
 
             // Actualizar fecha
             const startDate = new Date(2024, 0, 1);
@@ -922,29 +1096,43 @@
             updateSpectrum();
         }
 
-        // Actualizar visualizador de espectro
+        // Actualizar visualizador de espectro con FFT real
         function updateSpectrum() {
             const spectrum = document.getElementById('spectrum');
+
+            // Crear barras si no existen (32 barras para FFT)
             if (!spectrum.children.length) {
-                planetas.forEach((planeta, i) => {
+                for (let i = 0; i < 32; i++) {
                     const bar = document.createElement('div');
                     bar.className = 'spectrum-bar';
-                    bar.style.background = planeta.color;
+                    // Gradiente de color según frecuencia
+                    const hue = (i / 32) * 60 + 20;  // Amarillo a verde
+                    bar.style.background = `hsl(${hue}, 80%, 50%)`;
                     spectrum.appendChild(bar);
-                });
+                }
             }
 
-            planetas.forEach((planeta, i) => {
-                const bar = spectrum.children[i];
-                if (bar) {
-                    const pos = getOrbitalPosition(planeta.a, planeta.e, planeta.T, simDays);
-                    const freq = getFrequency(planeta, pos, i);
-                    const height = planetStates[i].enabled && running
-                        ? Math.min(50, (freq / 600) * 50 * planetStates[i].volume)
-                        : 2;
-                    bar.style.height = height + 'px';
+            // Obtener datos FFT reales si hay analyser
+            if (analyser && running) {
+                analyser.getByteFrequencyData(analyserData);
+
+                // Mapear 128 bins a 32 barras
+                const binsPerBar = Math.floor(analyser.frequencyBinCount / 32);
+                for (let i = 0; i < 32; i++) {
+                    let sum = 0;
+                    for (let j = 0; j < binsPerBar; j++) {
+                        sum += analyserData[i * binsPerBar + j];
+                    }
+                    const avg = sum / binsPerBar;
+                    const height = Math.max(2, (avg / 255) * 50);
+                    spectrum.children[i].style.height = height + 'px';
                 }
-            });
+            } else {
+                // Sin audio: barras mínimas
+                for (let i = 0; i < spectrum.children.length; i++) {
+                    spectrum.children[i].style.height = '2px';
+                }
+            }
         }
 
         // Crear mixer UI
@@ -1062,6 +1250,16 @@
             if (!running) draw();
         });
 
+        // Scale mode selector
+        document.querySelectorAll('.scale-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                scaleMode = btn.dataset.scale;
+                if (!running) draw();
+            });
+        });
+
         // Presets
         document.querySelectorAll('.preset-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -1077,6 +1275,63 @@
                     updateAudio();
                 }
             });
+        });
+
+        // Concert Hall mode
+        function enterConcertMode() {
+            concertMode = true;
+            trails = planetas.map(() => []);  // Reset trails
+
+            const container = document.querySelector('.container');
+            container.classList.add('fullscreen');
+
+            // Resize canvas para fullscreen
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            // Crear botón de salida
+            const exitBtn = document.createElement('button');
+            exitBtn.className = 'exit-fullscreen';
+            exitBtn.textContent = '✕ Salir (ESC)';
+            exitBtn.id = 'exitConcertBtn';
+            exitBtn.onclick = exitConcertMode;
+            document.body.appendChild(exitBtn);
+
+            // Auto-play si no está corriendo
+            if (!running) {
+                initAudio();
+                running = true;
+                lastTime = performance.now();
+                requestAnimationFrame(simulate);
+                updateAudio();
+            }
+        }
+
+        function exitConcertMode() {
+            concertMode = false;
+            trails = planetas.map(() => []);
+
+            const container = document.querySelector('.container');
+            container.classList.remove('fullscreen');
+
+            // Restaurar tamaño del canvas
+            canvas.width = 800;
+            canvas.height = 800;
+
+            // Eliminar botón de salida
+            const exitBtn = document.getElementById('exitConcertBtn');
+            if (exitBtn) exitBtn.remove();
+
+            if (!running) draw();
+        }
+
+        document.getElementById('concertBtn').addEventListener('click', enterConcertMode);
+
+        // ESC para salir de concert mode
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && concertMode) {
+                exitConcertMode();
+            }
         });
 
         // Inicializar
