@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harmonices Mundi - La Música de las Esferas</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            padding: 15px;
+            max-width: 1400px;
+        }
+
+        .simulacion {
+            position: relative;
+        }
+
+        .titulo {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: rgba(255,255,255,0.9);
+            z-index: 10;
+            text-shadow: 0 0 20px rgba(0,0,0,0.8);
+            text-align: center;
+        }
+
+        .titulo small {
+            display: block;
+            font-size: 0.75rem;
+            color: rgba(251, 191, 36, 0.8);
+            margin-top: 2px;
+        }
+
+        #canvas {
+            display: block;
+            background: radial-gradient(ellipse at center, #0a0a20 0%, #000 70%);
+            border-radius: 8px;
+        }
+
+        .panel {
+            background: rgba(10, 10, 20, 0.95);
+            border: 1px solid #1a1a3e;
+            border-radius: 10px;
+            padding: 15px;
+            width: 320px;
+            color: #fff;
+            max-height: 95vh;
+            overflow-y: auto;
+            font-size: 0.85rem;
+        }
+
+        .panel h2 {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: rgba(255,255,255,0.9);
+            border-bottom: 1px solid #333;
+            padding-bottom: 6px;
+        }
+
+        .panel h3 {
+            font-size: 1rem;
+            font-weight: 500;
+            margin: 14px 0 8px 0;
+            color: #fbbf24;
+        }
+
+        /* Controles globales */
+        .global-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .global-controls button {
+            flex: 1;
+            padding: 10px 8px;
+            font-size: 0.85rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-play { background: #4ade80; color: #000; }
+        .btn-play:hover { background: #22c55e; }
+        .btn-pause { background: #fbbf24; color: #000; }
+        .btn-pause:hover { background: #f59e0b; }
+        .btn-reset { background: #f87171; color: #000; }
+        .btn-reset:hover { background: #ef4444; }
+
+        /* Modo selector */
+        .mode-selector {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 8px 6px;
+            font-size: 0.7rem;
+            border: 1px solid #333;
+            border-radius: 5px;
+            background: #1a1a3e;
+            color: #aaa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: rgba(251, 191, 36, 0.2);
+            border-color: #fbbf24;
+            color: #fbbf24;
+        }
+
+        .mode-btn:hover {
+            border-color: #fbbf24;
+        }
+
+        /* Volumen master */
+        .master-volume {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+        }
+
+        .master-volume label {
+            font-size: 0.75rem;
+            color: #888;
+            min-width: 50px;
+        }
+
+        .master-volume input[type="range"] {
+            flex: 1;
+        }
+
+        .master-volume .value {
+            font-size: 0.85rem;
+            color: #fff;
+            min-width: 35px;
+            text-align: right;
+        }
+
+        /* Mixer planetario */
+        .planet-mixer {
+            margin-top: 10px;
+        }
+
+        .planet-channel {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .planet-channel.active {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .planet-channel.sounding {
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+        }
+
+        .planet-toggle {
+            width: 32px;
+            height: 18px;
+            background: #333;
+            border-radius: 9px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s;
+        }
+
+        .planet-toggle.on {
+            background: #4ade80;
+        }
+
+        .planet-toggle::after {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+        }
+
+        .planet-toggle.on::after {
+            transform: translateX(14px);
+        }
+
+        .planet-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .planet-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .planet-name {
+            font-size: 0.8rem;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .planet-freq {
+            font-size: 0.65rem;
+            color: #888;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .planet-volume {
+            width: 60px;
+            height: 4px;
+            background: #222;
+            border-radius: 2px;
+            -webkit-appearance: none;
+        }
+
+        .planet-volume::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 10px;
+            height: 10px;
+            background: #fbbf24;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* Presets */
+        .presets {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .preset-btn {
+            padding: 8px 6px;
+            font-size: 0.7rem;
+            border: 1px solid #333;
+            border-radius: 5px;
+            background: #1a1a3e;
+            color: #aaa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover {
+            border-color: #fbbf24;
+            color: #fbbf24;
+        }
+
+        /* Info histórica */
+        .kepler-quote {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(251, 191, 36, 0.05);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-style: italic;
+            color: #aaa;
+            line-height: 1.5;
+        }
+
+        .kepler-quote cite {
+            display: block;
+            margin-top: 8px;
+            font-style: normal;
+            color: #fbbf24;
+            font-size: 0.7rem;
+        }
+
+        /* Visualizador de frecuencias */
+        .spectrum {
+            margin-top: 12px;
+            height: 60px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            padding: 5px;
+        }
+
+        .spectrum-bar {
+            width: 20px;
+            background: linear-gradient(to top, #4ade80, #fbbf24);
+            border-radius: 2px 2px 0 0;
+            transition: height 0.1s;
+        }
+
+        /* Checkbox group */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .checkbox-group input {
+            width: 14px;
+            height: 14px;
+            accent-color: #fbbf24;
+        }
+
+        .checkbox-group label {
+            font-size: 0.75rem;
+            color: #aaa;
+        }
+
+        /* Control de velocidad */
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+        }
+
+        .speed-control label {
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .speed-control input {
+            flex: 1;
+            height: 4px;
+            background: #222;
+            border-radius: 2px;
+            -webkit-appearance: none;
+        }
+
+        .speed-control input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #fbbf24;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .speed-control .value {
+            font-size: 0.8rem;
+            color: #fff;
+            min-width: 55px;
+            text-align: right;
+        }
+
+        /* Fecha simulada */
+        .fecha {
+            text-align: center;
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 4px;
+        }
+
+        .fecha-label {
+            font-size: 0.65rem;
+            color: #666;
+        }
+
+        .fecha-valor {
+            font-size: 1rem;
+            color: #fbbf24;
+            font-weight: 500;
+        }
+
+        /* Ecuaciones */
+        .equations {
+            margin-top: 12px;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            font-family: 'Inter', monospace;
+            font-size: 0.7rem;
+            color: #888;
+        }
+
+        .equations .eq {
+            margin-bottom: 4px;
+        }
+
+        .equations .eq-name {
+            color: #fbbf24;
+        }
+
+        input[type="range"] {
+            height: 4px;
+            background: #222;
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #fbbf24;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="simulacion">
+            <div class="titulo">
+                Harmonices Mundi
+                <small>Johannes Kepler, 1619</small>
+            </div>
+            <canvas id="canvas" width="800" height="800"></canvas>
+        </div>
+
+        <div class="panel">
+            <h2>La Música de las Esferas</h2>
+
+            <div class="global-controls">
+                <button class="btn-play" id="playBtn">▶ Play</button>
+                <button class="btn-pause" id="pauseBtn">⏸ Pausa</button>
+                <button class="btn-reset" id="resetBtn">↺ Reset</button>
+            </div>
+
+            <h3>Modo de Sonificación</h3>
+            <div class="mode-selector">
+                <button class="mode-btn active" data-mode="kepler">Kepler 1619</button>
+                <button class="mode-btn" data-mode="realtime">Tiempo Real</button>
+                <button class="mode-btn" data-mode="musical">Musical</button>
+            </div>
+
+            <div class="master-volume">
+                <label>Master</label>
+                <input type="range" id="masterVolume" min="0" max="100" value="50">
+                <span class="value" id="masterValue">50%</span>
+            </div>
+
+            <h3>Mixer Planetario</h3>
+            <div class="planet-mixer" id="planetMixer"></div>
+
+            <div class="spectrum" id="spectrum"></div>
+
+            <h3>Presets Armónicos</h3>
+            <div class="presets">
+                <button class="preset-btn" data-preset="all">Coro Completo</button>
+                <button class="preset-btn" data-preset="inner">Rocosos</button>
+                <button class="preset-btn" data-preset="outer">Gigantes</button>
+                <button class="preset-btn" data-preset="kepler">Tríada Kepler</button>
+                <button class="preset-btn" data-preset="fifth">Quinta Perfecta</button>
+                <button class="preset-btn" data-preset="tritone">Tritono</button>
+            </div>
+
+            <div class="speed-control">
+                <label>Velocidad</label>
+                <input type="range" id="speed" min="1" max="365" value="30">
+                <span class="value" id="speedValue">30 días/s</span>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="showOrbits" checked>
+                <label for="showOrbits">Mostrar órbitas</label>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="showLabels" checked>
+                <label for="showLabels">Mostrar nombres</label>
+            </div>
+
+            <div class="fecha">
+                <div class="fecha-label">Fecha simulada</div>
+                <div class="fecha-valor" id="fecha">1 Ene 2024</div>
+            </div>
+
+            <div class="equations">
+                <div class="eq"><span class="eq-name">3ª Ley:</span> T² = a³</div>
+                <div class="eq"><span class="eq-name">Kepler:</span> f ∝ v<sub>orbital</sub></div>
+                <div class="eq"><span class="eq-name">Velocidad:</span> v = √(GM(2/r - 1/a))</div>
+            </div>
+
+            <div class="kepler-quote">
+                "El movimiento celeste no es otra cosa que una canción continua a varias voces,
+                percibida por el intelecto, no por el oído; una música que, a través de tensiones
+                discordantes, como síncopas y cadencias, progresa hacia ciertas clausulas prediseñadas..."
+                <cite>— Johannes Kepler, Harmonices Mundi (1619)</cite>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        // Datos planetarios con intervalos de Kepler
+        const planetas = [
+            {
+                nombre: 'Mercurio',
+                symbol: '☿',
+                a: 0.387, e: 0.206, T: 88,
+                color: '#a0a0a0', radius: 5,
+                // Kepler: quinta disminuida (intervalo más amplio)
+                keplerMin: 261.63, keplerMax: 392.00,  // Do4 → Sol4
+                baseFreq: 523.25,  // Do5
+                waveform: 'sine'
+            },
+            {
+                nombre: 'Venus',
+                symbol: '♀',
+                a: 0.723, e: 0.007, T: 225,
+                color: '#e6c87a', radius: 7,
+                // Kepler: casi unísono (órbita casi circular)
+                keplerMin: 329.63, keplerMax: 349.23,  // Mi4 → Fa4
+                baseFreq: 493.88,  // Si4
+                waveform: 'sine'
+            },
+            {
+                nombre: 'Tierra',
+                symbol: '🌍',
+                a: 1.0, e: 0.017, T: 365.25,
+                color: '#6b93d6', radius: 7,
+                // Kepler: semitono
+                keplerMin: 261.63, keplerMax: 277.18,  // Do4 → Do#4
+                baseFreq: 440.00,  // La4
+                waveform: 'sine'
+            },
+            {
+                nombre: 'Marte',
+                symbol: '♂',
+                a: 1.524, e: 0.093, T: 687,
+                color: '#c1440e', radius: 6,
+                // Kepler: quinta perfecta
+                keplerMin: 196.00, keplerMax: 293.66,  // Sol3 → Re4
+                baseFreq: 392.00,  // Sol4
+                waveform: 'sine'
+            },
+            {
+                nombre: 'Júpiter',
+                symbol: '♃',
+                a: 5.203, e: 0.048, T: 4333,
+                color: '#d8ca9d', radius: 14,
+                // Kepler: tercera menor
+                keplerMin: 98.00, keplerMax: 116.54,   // Sol2 → La#2
+                baseFreq: 196.00,  // Sol3
+                waveform: 'triangle'
+            },
+            {
+                nombre: 'Saturno',
+                symbol: '♄',
+                a: 9.537, e: 0.054, T: 10759,
+                color: '#f4d59e', radius: 12,
+                hasRings: true,
+                // Kepler: tercera mayor
+                keplerMin: 73.42, keplerMax: 92.50,    // Re2 → Fa#2
+                baseFreq: 146.83,  // Re3
+                waveform: 'triangle'
+            },
+            {
+                nombre: 'Urano',
+                symbol: '♅',
+                a: 19.19, e: 0.047, T: 30687,
+                color: '#b5e3e3', radius: 9,
+                // No conocido por Kepler - extrapolado
+                keplerMin: 55.00, keplerMax: 61.74,
+                baseFreq: 110.00,  // La2
+                waveform: 'triangle'
+            },
+            {
+                nombre: 'Neptuno',
+                symbol: '♆',
+                a: 30.07, e: 0.009, T: 60190,
+                color: '#5b7fde', radius: 9,
+                // No conocido por Kepler - extrapolado
+                keplerMin: 41.20, keplerMax: 43.65,
+                baseFreq: 82.41,   // Mi2
+                waveform: 'sawtooth'
+            }
+        ];
+
+        // Escala musical (Do mayor + extensiones)
+        const musicalScale = [
+            261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25  // Do4-Do5
+        ];
+
+        // Estado
+        let running = false;
+        let audioStarted = false;
+        let lastTime = 0;
+        let simDays = 0;
+        let speed = 30;
+        let mode = 'kepler';
+        let masterVolume = 0.5;
+        let showOrbits = true;
+        let showLabels = true;
+
+        // Audio
+        let audioCtx = null;
+        const oscillators = [];
+        const gains = [];
+        const analyser = null;
+        const planetStates = planetas.map(() => ({ enabled: true, volume: 0.7 }));
+
+        // Presets
+        const presets = {
+            all:     [1,1,1,1,1,1,1,1],
+            inner:   [1,1,1,1,0,0,0,0],
+            outer:   [0,0,0,0,1,1,1,1],
+            kepler:  [1,0,1,0,1,0,0,0],  // Mercurio, Tierra, Júpiter
+            fifth:   [0,0,1,0,1,0,0,0],  // Tierra + Júpiter (quinta)
+            tritone: [1,0,0,1,0,0,0,0]   // Mercurio + Marte (disonante)
+        };
+
+        // Inicializar Audio
+        function initAudio() {
+            if (audioCtx) return;
+
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            planetas.forEach((planeta, i) => {
+                const osc = audioCtx.createOscillator();
+                osc.type = planeta.waveform || 'sine';
+                osc.frequency.value = planeta.baseFreq;
+
+                const gain = audioCtx.createGain();
+                gain.gain.value = 0;
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+
+                oscillators[i] = osc;
+                gains[i] = gain;
+            });
+
+            audioStarted = true;
+        }
+
+        // Calcular posición orbital (Kepler)
+        function getOrbitalPosition(a, e, T, days) {
+            const M = (2 * Math.PI * days / T) % (2 * Math.PI);
+            let E = M;
+            for (let i = 0; i < 10; i++) {
+                E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+            }
+            const theta = 2 * Math.atan2(
+                Math.sqrt(1 + e) * Math.sin(E / 2),
+                Math.sqrt(1 - e) * Math.cos(E / 2)
+            );
+            const r = a * (1 - e * Math.cos(E));
+            return { x: r * Math.cos(theta), y: r * Math.sin(theta), r, theta, E };
+        }
+
+        // Calcular frecuencia según modo
+        function getFrequency(planeta, pos, index) {
+            const r = pos.r;
+            const a = planeta.a;
+
+            switch(mode) {
+                case 'kepler':
+                    // Interpolación entre min y max según distancia al Sol
+                    // Perihelio (r mínimo) → freq máxima
+                    // Afelio (r máximo) → freq mínima
+                    const perihelion = a * (1 - planeta.e);
+                    const aphelion = a * (1 + planeta.e);
+                    const t = (r - perihelion) / (aphelion - perihelion);
+                    return planeta.keplerMax - t * (planeta.keplerMax - planeta.keplerMin);
+
+                case 'realtime':
+                    // Velocidad orbital → frecuencia
+                    // v ∝ 1/√r para órbita circular
+                    const velocity = Math.sqrt(1 / r);  // Normalizado
+                    return planeta.baseFreq * velocity;
+
+                case 'musical':
+                    // Frecuencias fijas en escala musical
+                    return musicalScale[index];
+
+                default:
+                    return planeta.baseFreq;
+            }
+        }
+
+        // Actualizar audio
+        function updateAudio() {
+            if (!audioCtx) return;
+
+            planetas.forEach((planeta, i) => {
+                const pos = getOrbitalPosition(planeta.a, planeta.e, planeta.T, simDays);
+                const freq = getFrequency(planeta, pos, i);
+
+                oscillators[i].frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
+
+                const targetGain = planetStates[i].enabled && running
+                    ? planetStates[i].volume * masterVolume * 0.15
+                    : 0;
+
+                gains[i].gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.05);
+            });
+        }
+
+        // Dibujar estrellas
+        function drawStars() {
+            ctx.fillStyle = '#fff';
+            for (let i = 0; i < 150; i++) {
+                const x = (Math.sin(i * 123.456) * 0.5 + 0.5) * canvas.width;
+                const y = (Math.cos(i * 789.012) * 0.5 + 0.5) * canvas.height;
+                const size = (Math.sin(i * 345.678) * 0.5 + 0.5) * 1 + 0.3;
+                ctx.globalAlpha = 0.15 + Math.random() * 0.15;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        // Dibujar Sol
+        function drawSun() {
+            const sunRadius = 18;
+
+            // Corona pulsante
+            const pulse = 1 + 0.1 * Math.sin(simDays * 0.1);
+            const coronaGradient = ctx.createRadialGradient(cx, cy, sunRadius, cx, cy, sunRadius * 3 * pulse);
+            coronaGradient.addColorStop(0, 'rgba(255, 200, 50, 0.4)');
+            coronaGradient.addColorStop(1, 'rgba(255, 200, 50, 0)');
+            ctx.beginPath();
+            ctx.arc(cx, cy, sunRadius * 3 * pulse, 0, Math.PI * 2);
+            ctx.fillStyle = coronaGradient;
+            ctx.fill();
+
+            // Sol
+            const sunGradient = ctx.createRadialGradient(cx - 3, cy - 3, 0, cx, cy, sunRadius);
+            sunGradient.addColorStop(0, '#fff');
+            sunGradient.addColorStop(0.3, '#ffee00');
+            sunGradient.addColorStop(0.7, '#ffaa00');
+            sunGradient.addColorStop(1, '#ff6600');
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, sunRadius, 0, Math.PI * 2);
+            ctx.fillStyle = sunGradient;
+            ctx.fill();
+        }
+
+        // Dibujar planeta
+        function drawPlanet(planeta, index) {
+            const scale = 12;  // UA a píxeles
+            const pos = getOrbitalPosition(planeta.a, planeta.e, planeta.T, simDays);
+
+            const px = cx + pos.x * scale;
+            const py = cy - pos.y * scale;
+
+            // Órbita
+            if (showOrbits) {
+                ctx.beginPath();
+                for (let t = 0; t <= 360; t += 2) {
+                    const angle = t * Math.PI / 180;
+                    const r = planeta.a * (1 - planeta.e * planeta.e) / (1 + planeta.e * Math.cos(angle));
+                    const ox = cx + r * Math.cos(angle) * scale;
+                    const oy = cy - r * Math.sin(angle) * scale;
+                    if (t === 0) ctx.moveTo(ox, oy);
+                    else ctx.lineTo(ox, oy);
+                }
+                ctx.closePath();
+                ctx.strokeStyle = planeta.color + '25';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            // Indicador de sonido (aura si está sonando)
+            if (planetStates[index].enabled && running) {
+                const freq = getFrequency(planeta, pos, index);
+                const intensity = Math.min(1, freq / 500);
+                const auraRadius = planeta.radius + 5 + intensity * 8;
+
+                const auraGradient = ctx.createRadialGradient(px, py, planeta.radius, px, py, auraRadius);
+                auraGradient.addColorStop(0, planeta.color + '60');
+                auraGradient.addColorStop(1, planeta.color + '00');
+
+                ctx.beginPath();
+                ctx.arc(px, py, auraRadius, 0, Math.PI * 2);
+                ctx.fillStyle = auraGradient;
+                ctx.fill();
+            }
+
+            // Anillos de Saturno
+            if (planeta.hasRings) {
+                ctx.beginPath();
+                ctx.ellipse(px, py, planeta.radius * 2, planeta.radius * 0.5, -0.4, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(210, 180, 140, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            // Planeta
+            const planetGradient = ctx.createRadialGradient(px - planeta.radius/3, py - planeta.radius/3, 0, px, py, planeta.radius);
+            planetGradient.addColorStop(0, '#fff');
+            planetGradient.addColorStop(0.3, planeta.color);
+            planetGradient.addColorStop(1, shadeColor(planeta.color, -40));
+
+            ctx.beginPath();
+            ctx.arc(px, py, planeta.radius, 0, Math.PI * 2);
+            ctx.fillStyle = planetGradient;
+            ctx.fill();
+
+            // Nombre
+            if (showLabels) {
+                ctx.font = "11px Inter";
+                ctx.fillStyle = planetStates[index].enabled ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)';
+                ctx.fillText(planeta.symbol + ' ' + planeta.nombre, px + planeta.radius + 5, py + 3);
+            }
+
+            return { px, py, pos };
+        }
+
+        function shadeColor(color, percent) {
+            const num = parseInt(color.replace('#', ''), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = Math.max(0, Math.min(255, (num >> 16) + amt));
+            const G = Math.max(0, Math.min(255, (num >> 8 & 0x00FF) + amt));
+            const B = Math.max(0, Math.min(255, (num & 0x0000FF) + amt));
+            return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+        }
+
+        // Dibujar todo
+        function draw() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawStars();
+            drawSun();
+
+            const positions = [];
+            for (let i = 0; i < planetas.length; i++) {
+                positions[i] = drawPlanet(planetas[i], i);
+            }
+
+            // Escala
+            const scale = 12;
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(20, canvas.height - 30);
+            ctx.lineTo(20 + scale * 5, canvas.height - 30);
+            ctx.stroke();
+            ctx.font = "10px Inter";
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.fillText('5 UA', 20 + scale * 2.5 - 10, canvas.height - 15);
+
+            // Actualizar fecha
+            const startDate = new Date(2024, 0, 1);
+            const currentDate = new Date(startDate.getTime() + simDays * 24 * 60 * 60 * 1000);
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            document.getElementById('fecha').textContent =
+                `${currentDate.getDate()} ${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+
+            // Actualizar mixer display
+            updateMixerDisplay();
+        }
+
+        // Actualizar display del mixer
+        function updateMixerDisplay() {
+            planetas.forEach((planeta, i) => {
+                const pos = getOrbitalPosition(planeta.a, planeta.e, planeta.T, simDays);
+                const freq = getFrequency(planeta, pos, i);
+
+                const freqEl = document.querySelector(`#channel-${i} .planet-freq`);
+                if (freqEl) {
+                    freqEl.textContent = `${freq.toFixed(1)} Hz`;
+                }
+
+                const channelEl = document.getElementById(`channel-${i}`);
+                if (channelEl) {
+                    channelEl.classList.toggle('sounding', planetStates[i].enabled && running);
+                }
+            });
+
+            // Actualizar espectro
+            updateSpectrum();
+        }
+
+        // Actualizar visualizador de espectro
+        function updateSpectrum() {
+            const spectrum = document.getElementById('spectrum');
+            if (!spectrum.children.length) {
+                planetas.forEach((planeta, i) => {
+                    const bar = document.createElement('div');
+                    bar.className = 'spectrum-bar';
+                    bar.style.background = planeta.color;
+                    spectrum.appendChild(bar);
+                });
+            }
+
+            planetas.forEach((planeta, i) => {
+                const bar = spectrum.children[i];
+                if (bar) {
+                    const pos = getOrbitalPosition(planeta.a, planeta.e, planeta.T, simDays);
+                    const freq = getFrequency(planeta, pos, i);
+                    const height = planetStates[i].enabled && running
+                        ? Math.min(50, (freq / 600) * 50 * planetStates[i].volume)
+                        : 2;
+                    bar.style.height = height + 'px';
+                }
+            });
+        }
+
+        // Crear mixer UI
+        function createMixer() {
+            const mixer = document.getElementById('planetMixer');
+            mixer.innerHTML = '';
+
+            planetas.forEach((planeta, i) => {
+                const channel = document.createElement('div');
+                channel.className = 'planet-channel';
+                channel.id = `channel-${i}`;
+
+                channel.innerHTML = `
+                    <div class="planet-toggle ${planetStates[i].enabled ? 'on' : ''}" data-index="${i}"></div>
+                    <div class="planet-color" style="background: ${planeta.color}"></div>
+                    <div class="planet-info">
+                        <div class="planet-name">${planeta.symbol} ${planeta.nombre}</div>
+                        <div class="planet-freq">${planeta.baseFreq.toFixed(1)} Hz</div>
+                    </div>
+                    <input type="range" class="planet-volume" data-index="${i}"
+                           min="0" max="100" value="${planetStates[i].volume * 100}">
+                `;
+
+                mixer.appendChild(channel);
+            });
+
+            // Event listeners para toggles
+            document.querySelectorAll('.planet-toggle').forEach(toggle => {
+                toggle.addEventListener('click', () => {
+                    const index = parseInt(toggle.dataset.index);
+                    planetStates[index].enabled = !planetStates[index].enabled;
+                    toggle.classList.toggle('on');
+                    updateAudio();
+                });
+            });
+
+            // Event listeners para volúmenes
+            document.querySelectorAll('.planet-volume').forEach(slider => {
+                slider.addEventListener('input', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    planetStates[index].volume = e.target.value / 100;
+                    updateAudio();
+                });
+            });
+        }
+
+        // Simulación
+        function simulate(currentTime) {
+            if (!running) return;
+
+            const dt = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+
+            simDays += speed * dt;
+
+            updateAudio();
+            draw();
+            requestAnimationFrame(simulate);
+        }
+
+        // Event Listeners
+        document.getElementById('playBtn').addEventListener('click', () => {
+            initAudio();
+            if (!running) {
+                running = true;
+                lastTime = performance.now();
+                requestAnimationFrame(simulate);
+            }
+            updateAudio();
+        });
+
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            running = false;
+            updateAudio();
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            running = false;
+            simDays = 0;
+            updateAudio();
+            draw();
+        });
+
+        // Modo selector
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                mode = btn.dataset.mode;
+                updateAudio();
+            });
+        });
+
+        // Master volume
+        document.getElementById('masterVolume').addEventListener('input', (e) => {
+            masterVolume = e.target.value / 100;
+            document.getElementById('masterValue').textContent = e.target.value + '%';
+            updateAudio();
+        });
+
+        // Speed
+        document.getElementById('speed').addEventListener('input', (e) => {
+            speed = parseFloat(e.target.value);
+            document.getElementById('speedValue').textContent = speed + ' días/s';
+        });
+
+        // Checkboxes
+        document.getElementById('showOrbits').addEventListener('change', (e) => {
+            showOrbits = e.target.checked;
+            if (!running) draw();
+        });
+
+        document.getElementById('showLabels').addEventListener('change', (e) => {
+            showLabels = e.target.checked;
+            if (!running) draw();
+        });
+
+        // Presets
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const preset = presets[btn.dataset.preset];
+                if (preset) {
+                    preset.forEach((val, i) => {
+                        planetStates[i].enabled = val === 1;
+                        const toggle = document.querySelector(`#channel-${i} .planet-toggle`);
+                        if (toggle) {
+                            toggle.classList.toggle('on', val === 1);
+                        }
+                    });
+                    updateAudio();
+                }
+            });
+        });
+
+        // Inicializar
+        createMixer();
+        draw();
+    </script>
+</body>
+</html>
