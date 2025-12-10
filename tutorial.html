@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harmonices Mundi - Tutorial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-text {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .card-glow:hover {
+            box-shadow: 0 0 30px rgba(251, 191, 36, 0.1);
+        }
+        .planet-orbit {
+            animation: orbit 20s linear infinite;
+        }
+        @keyframes orbit {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .note-box {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(251, 191, 36, 0.05));
+            border-left: 3px solid #fbbf24;
+        }
+        .kepler-portrait {
+            filter: sepia(30%) contrast(110%);
+        }
+        .musical-staff {
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 8px,
+                rgba(255,255,255,0.1) 8px,
+                rgba(255,255,255,0.1) 9px
+            );
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+    <!-- Hero Section -->
+    <header class="relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-gray-900 to-gray-950"></div>
+        <div class="absolute inset-0 opacity-30">
+            <div class="absolute top-20 left-20 w-2 h-2 bg-white rounded-full animate-pulse"></div>
+            <div class="absolute top-40 right-40 w-1 h-1 bg-white rounded-full animate-pulse" style="animation-delay: 0.5s"></div>
+            <div class="absolute top-60 left-1/3 w-1.5 h-1.5 bg-white rounded-full animate-pulse" style="animation-delay: 1s"></div>
+            <div class="absolute top-32 right-1/4 w-1 h-1 bg-white rounded-full animate-pulse" style="animation-delay: 1.5s"></div>
+        </div>
+
+        <div class="relative max-w-6xl mx-auto px-6 py-16 text-center">
+            <p class="text-amber-400 text-sm font-medium tracking-wider mb-4">JOHANNES KEPLER, 1619</p>
+            <h1 class="text-5xl md:text-7xl font-light mb-4">
+                <span class="gradient-text font-medium">Harmonices Mundi</span>
+            </h1>
+            <p class="text-2xl md:text-3xl text-gray-400 font-light mb-8">La Armonía del Mundo</p>
+            <p class="text-lg text-gray-500 max-w-2xl mx-auto mb-10">
+                Una simulación interactiva que recrea la visión de Kepler:
+                los planetas como un coro celestial, cantando según sus órbitas.
+            </p>
+            <a href="index.html" class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-gray-900 font-medium px-8 py-4 rounded-lg transition-all transform hover:scale-105">
+                <span>▶</span> Abrir Simulación
+            </a>
+        </div>
+    </header>
+
+    <!-- Kepler Section -->
+    <section class="max-w-6xl mx-auto px-6 py-16">
+        <div class="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+                <h2 class="text-3xl font-medium mb-6">
+                    <span class="text-amber-400">01.</span> ¿Quién fue Kepler?
+                </h2>
+                <p class="text-gray-400 leading-relaxed mb-4">
+                    <strong class="text-white">Johannes Kepler</strong> (1571-1630) fue un astrónomo y matemático alemán,
+                    considerado uno de los fundadores de la astronomía moderna. Formuló las tres leyes del movimiento
+                    planetario que llevan su nombre.
+                </p>
+                <p class="text-gray-400 leading-relaxed mb-4">
+                    Pero Kepler no era solo un científico frío. Era un místico que buscaba la armonía divina
+                    en el cosmos. Creía firmemente que Dios había diseñado el universo según principios
+                    musicales y geométricos perfectos.
+                </p>
+                <div class="note-box p-4 rounded-r-lg mt-6">
+                    <p class="text-gray-300 italic">
+                        "La geometría es una y eterna, un reflejo de la mente de Dios.
+                        Que la humanidad la comparta es una de las razones por las que el hombre es la imagen de Dios."
+                    </p>
+                    <p class="text-amber-400 text-sm mt-2">— Johannes Kepler</p>
+                </div>
+            </div>
+            <div class="relative">
+                <div class="aspect-square bg-gray-900 rounded-2xl border border-gray-800 p-8 flex items-center justify-center">
+                    <!-- Kepler's Platonic Solids representation -->
+                    <svg viewBox="0 0 200 200" class="w-full h-full opacity-80">
+                        <!-- Outer circle (Saturn) -->
+                        <circle cx="100" cy="100" r="90" fill="none" stroke="#f4d59e" stroke-width="0.5" opacity="0.5"/>
+                        <!-- Cube edges suggestion -->
+                        <polygon points="30,30 170,30 170,170 30,170" fill="none" stroke="#fbbf24" stroke-width="0.5" opacity="0.3"/>
+                        <!-- Jupiter circle -->
+                        <circle cx="100" cy="100" r="70" fill="none" stroke="#d8ca9d" stroke-width="0.5" opacity="0.5"/>
+                        <!-- Tetrahedron suggestion -->
+                        <polygon points="100,35 40,140 160,140" fill="none" stroke="#fbbf24" stroke-width="0.5" opacity="0.3"/>
+                        <!-- Mars circle -->
+                        <circle cx="100" cy="100" r="50" fill="none" stroke="#c1440e" stroke-width="0.5" opacity="0.5"/>
+                        <!-- Earth circle -->
+                        <circle cx="100" cy="100" r="35" fill="none" stroke="#6b93d6" stroke-width="0.5" opacity="0.5"/>
+                        <!-- Venus circle -->
+                        <circle cx="100" cy="100" r="25" fill="none" stroke="#e6c87a" stroke-width="0.5" opacity="0.5"/>
+                        <!-- Mercury circle -->
+                        <circle cx="100" cy="100" r="15" fill="none" stroke="#a0a0a0" stroke-width="0.5" opacity="0.5"/>
+                        <!-- Sun -->
+                        <circle cx="100" cy="100" r="8" fill="#fbbf24"/>
+                    </svg>
+                </div>
+                <p class="text-center text-gray-500 text-sm mt-4">
+                    Mysterium Cosmographicum (1596): Kepler intentó explicar las órbitas
+                    usando los cinco sólidos platónicos anidados.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Book Section -->
+    <section class="bg-gray-900/50 py-16">
+        <div class="max-w-6xl mx-auto px-6">
+            <h2 class="text-3xl font-medium mb-6">
+                <span class="text-amber-400">02.</span> El Libro: Harmonices Mundi (1619)
+            </h2>
+
+            <div class="grid md:grid-cols-3 gap-8 mt-10">
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 card-glow transition-all">
+                    <div class="text-4xl mb-4">📐</div>
+                    <h3 class="text-xl font-medium mb-3">Libros I-II</h3>
+                    <p class="text-gray-400 text-sm">
+                        Geometría de polígonos regulares y su relación con la armonía.
+                        Kepler demuestra qué figuras pueden teselar el plano.
+                    </p>
+                </div>
+
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 card-glow transition-all">
+                    <div class="text-4xl mb-4">🎵</div>
+                    <h3 class="text-xl font-medium mb-3">Libro III</h3>
+                    <p class="text-gray-400 text-sm">
+                        Teoría musical: consonancias, disonancias, escalas.
+                        Relaciona los intervalos musicales con proporciones geométricas.
+                    </p>
+                </div>
+
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 card-glow transition-all">
+                    <div class="text-4xl mb-4">🌍</div>
+                    <h3 class="text-xl font-medium mb-3">Libro IV</h3>
+                    <p class="text-gray-400 text-sm">
+                        Astrología armónica: cómo los aspectos planetarios
+                        (conjunción, oposición, trígono) afectan la Tierra.
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-8 bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-500/20 rounded-xl p-8">
+                <div class="flex items-start gap-4">
+                    <div class="text-5xl">🪐</div>
+                    <div>
+                        <h3 class="text-2xl font-medium mb-3 text-amber-400">Libro V: La Música de las Esferas</h3>
+                        <p class="text-gray-300 leading-relaxed">
+                            El corazón del tratado. Aquí Kepler presenta su descubrimiento más revolucionario:
+                            <strong>la Tercera Ley del Movimiento Planetario</strong> (T² = a³),
+                            envuelta en una teoría donde cada planeta "canta" una nota musical
+                            que varía según su velocidad orbital.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Musical Theory -->
+    <section class="max-w-6xl mx-auto px-6 py-16">
+        <h2 class="text-3xl font-medium mb-10">
+            <span class="text-amber-400">03.</span> La Teoría Musical de Kepler
+        </h2>
+
+        <div class="grid md:grid-cols-2 gap-12">
+            <div>
+                <h3 class="text-xl font-medium mb-4 text-gray-200">El Concepto Central</h3>
+                <p class="text-gray-400 leading-relaxed mb-4">
+                    Kepler observó que los planetas se mueven más rápido cuando están cerca del Sol
+                    (perihelio) y más lento cuando están lejos (afelio). Esta variación de velocidad
+                    la interpretó como una variación de <strong class="text-white">tono musical</strong>.
+                </p>
+
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 mt-6">
+                    <h4 class="font-medium mb-4">La Analogía</h4>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex items-center gap-4">
+                            <span class="text-amber-400">Perihelio</span>
+                            <span class="text-gray-600">→</span>
+                            <span>Velocidad máxima</span>
+                            <span class="text-gray-600">→</span>
+                            <span class="text-green-400">Nota aguda ↑</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-blue-400">Afelio</span>
+                            <span class="text-gray-600">→</span>
+                            <span>Velocidad mínima</span>
+                            <span class="text-gray-600">→</span>
+                            <span class="text-red-400">Nota grave ↓</span>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-gray-400 leading-relaxed mt-6">
+                    El <strong class="text-white">intervalo musical</strong> de cada planeta
+                    (la diferencia entre su nota más grave y más aguda) depende de la
+                    <strong class="text-white">excentricidad</strong> de su órbita.
+                </p>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-medium mb-4 text-gray-200">Los Intervalos de Kepler</h3>
+                <div class="space-y-3">
+                    <!-- Mercury -->
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-gray-500 flex items-center justify-center text-lg">☿</div>
+                        <div class="flex-1">
+                            <div class="font-medium">Mercurio</div>
+                            <div class="text-sm text-gray-500">Quinta disminuida (casi octava)</div>
+                        </div>
+                        <div class="text-amber-400 font-mono text-sm">Do₄ → Sol₄</div>
+                    </div>
+
+                    <!-- Venus -->
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-yellow-600 flex items-center justify-center text-lg">♀</div>
+                        <div class="flex-1">
+                            <div class="font-medium">Venus</div>
+                            <div class="text-sm text-gray-500">Casi unísono (órbita circular)</div>
+                        </div>
+                        <div class="text-amber-400 font-mono text-sm">Mi₄ → Fa₄</div>
+                    </div>
+
+                    <!-- Earth -->
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-lg">🌍</div>
+                        <div class="flex-1">
+                            <div class="font-medium">Tierra</div>
+                            <div class="text-sm text-gray-500">Semitono</div>
+                        </div>
+                        <div class="text-amber-400 font-mono text-sm">Do₄ → Do#₄</div>
+                    </div>
+
+                    <!-- Mars -->
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-lg">♂</div>
+                        <div class="flex-1">
+                            <div class="font-medium">Marte</div>
+                            <div class="text-sm text-gray-500">Quinta perfecta</div>
+                        </div>
+                        <div class="text-amber-400 font-mono text-sm">Sol₃ → Re₄</div>
+                    </div>
+
+                    <!-- Jupiter -->
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-amber-200 flex items-center justify-center text-lg text-gray-800">♃</div>
+                        <div class="flex-1">
+                            <div class="font-medium">Júpiter</div>
+                            <div class="text-sm text-gray-500">Tercera menor</div>
+                        </div>
+                        <div class="text-amber-400 font-mono text-sm">Sol₂ → La#₂</div>
+                    </div>
+
+                    <!-- Saturn -->
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-amber-300 flex items-center justify-center text-lg text-gray-800">♄</div>
+                        <div class="flex-1">
+                            <div class="font-medium">Saturno</div>
+                            <div class="text-sm text-gray-500">Tercera mayor</div>
+                        </div>
+                        <div class="text-amber-400 font-mono text-sm">Re₂ → Fa#₂</div>
+                    </div>
+                </div>
+
+                <p class="text-gray-500 text-sm mt-4 italic">
+                    Nota: Urano y Neptuno no eran conocidos en la época de Kepler (descubiertos en 1781 y 1846).
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Quote -->
+    <section class="bg-gradient-to-b from-gray-900 to-gray-950 py-16">
+        <div class="max-w-4xl mx-auto px-6 text-center">
+            <div class="text-6xl mb-8 opacity-30">"</div>
+            <blockquote class="text-xl md:text-2xl text-gray-300 leading-relaxed italic">
+                El movimiento celeste no es otra cosa que una canción continua a varias voces,
+                percibida por el intelecto, no por el oído; una música que, a través de tensiones
+                discordantes, como síncopas y cadencias, progresa hacia ciertas clausulas prediseñadas,
+                y provee así cadencias... con las cuales las seis voces señalan la inmensidad del tiempo.
+            </blockquote>
+            <p class="text-amber-400 mt-8">— Johannes Kepler, Harmonices Mundi, Libro V (1619)</p>
+        </div>
+    </section>
+
+    <!-- How the Simulation Works -->
+    <section class="max-w-6xl mx-auto px-6 py-16">
+        <h2 class="text-3xl font-medium mb-10">
+            <span class="text-amber-400">04.</span> Cómo Funciona la Simulación
+        </h2>
+
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Mode 1 -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                <div class="bg-amber-500/10 p-4 border-b border-gray-800">
+                    <h3 class="font-medium text-amber-400">Modo Kepler 1619</h3>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                        Reproduce fielmente la teoría original. La frecuencia de cada planeta
+                        varía entre sus notas mínima y máxima según su distancia al Sol.
+                    </p>
+                    <div class="bg-gray-950 rounded-lg p-4 font-mono text-sm">
+                        <div class="text-gray-500">// Interpolación lineal</div>
+                        <div class="text-green-400">freq = f<sub>max</sub> - t × (f<sub>max</sub> - f<sub>min</sub>)</div>
+                        <div class="text-gray-500 mt-2">// donde t = posición normalizada</div>
+                        <div class="text-gray-500">// entre perihelio y afelio</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mode 2 -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                <div class="bg-blue-500/10 p-4 border-b border-gray-800">
+                    <h3 class="font-medium text-blue-400">Modo Tiempo Real</h3>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                        La frecuencia es proporcional a la velocidad orbital real.
+                        Más cerca del Sol = más rápido = más agudo.
+                    </p>
+                    <div class="bg-gray-950 rounded-lg p-4 font-mono text-sm">
+                        <div class="text-gray-500">// Velocidad orbital</div>
+                        <div class="text-blue-400">v = √(GM × (2/r - 1/a))</div>
+                        <div class="text-gray-500 mt-2">// Simplificado:</div>
+                        <div class="text-blue-400">freq = base × √(1/r)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mode 3 -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                <div class="bg-green-500/10 p-4 border-b border-gray-800">
+                    <h3 class="font-medium text-green-400">Modo Musical</h3>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                        Cada planeta tiene una nota fija de la escala de Do mayor.
+                        Ideal para escuchar armonías claras.
+                    </p>
+                    <div class="bg-gray-950 rounded-lg p-4 font-mono text-sm">
+                        <div class="text-gray-500">// Escala Do mayor</div>
+                        <div class="text-green-400">[261, 293, 329, 349,</div>
+                        <div class="text-green-400"> 392, 440, 493, 523]</div>
+                        <div class="text-gray-500 mt-2">// Do Re Mi Fa Sol La Si Do</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Details -->
+        <div class="mt-12 bg-gray-900 border border-gray-800 rounded-xl p-8">
+            <h3 class="text-xl font-medium mb-6">Detalles Técnicos</h3>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <h4 class="font-medium text-amber-400 mb-3">Física Orbital</h4>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-400">✓</span>
+                            <span>Órbitas elípticas reales (no circulares)</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-400">✓</span>
+                            <span>Ecuación de Kepler resuelta con Newton-Raphson</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-400">✓</span>
+                            <span>Excentricidades y períodos reales de cada planeta</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-400">✓</span>
+                            <span>Tercera ley de Kepler: T² = a³</span>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-medium text-amber-400 mb-3">Síntesis de Audio</h4>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-400">✓</span>
+                            <span>Web Audio API con OscillatorNode</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-400">✓</span>
+                            <span>8 osciladores independientes (uno por planeta)</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-400">✓</span>
+                            <span>Diferentes formas de onda: sine, triangle, sawtooth</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-400">✓</span>
+                            <span>Transiciones suaves con setTargetAtTime()</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Presets -->
+    <section class="bg-gray-900/50 py-16">
+        <div class="max-w-6xl mx-auto px-6">
+            <h2 class="text-3xl font-medium mb-10">
+                <span class="text-amber-400">05.</span> Presets Armónicos
+            </h2>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                    <h3 class="font-medium mb-2">🎼 Coro Completo</h3>
+                    <p class="text-gray-500 text-sm mb-4">Los 8 planetas sonando juntos</p>
+                    <div class="flex gap-2">
+                        <span class="w-6 h-6 rounded-full bg-gray-500"></span>
+                        <span class="w-6 h-6 rounded-full bg-yellow-600"></span>
+                        <span class="w-6 h-6 rounded-full bg-blue-500"></span>
+                        <span class="w-6 h-6 rounded-full bg-red-600"></span>
+                        <span class="w-6 h-6 rounded-full bg-amber-200"></span>
+                        <span class="w-6 h-6 rounded-full bg-amber-300"></span>
+                        <span class="w-6 h-6 rounded-full bg-cyan-300"></span>
+                        <span class="w-6 h-6 rounded-full bg-blue-400"></span>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                    <h3 class="font-medium mb-2">🪨 Planetas Rocosos</h3>
+                    <p class="text-gray-500 text-sm mb-4">Mercurio, Venus, Tierra, Marte</p>
+                    <div class="flex gap-2">
+                        <span class="w-6 h-6 rounded-full bg-gray-500"></span>
+                        <span class="w-6 h-6 rounded-full bg-yellow-600"></span>
+                        <span class="w-6 h-6 rounded-full bg-blue-500"></span>
+                        <span class="w-6 h-6 rounded-full bg-red-600"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                    <h3 class="font-medium mb-2">💨 Gigantes Gaseosos</h3>
+                    <p class="text-gray-500 text-sm mb-4">Júpiter, Saturno, Urano, Neptuno</p>
+                    <div class="flex gap-2">
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-amber-200"></span>
+                        <span class="w-6 h-6 rounded-full bg-amber-300"></span>
+                        <span class="w-6 h-6 rounded-full bg-cyan-300"></span>
+                        <span class="w-6 h-6 rounded-full bg-blue-400"></span>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                    <h3 class="font-medium mb-2">🔺 Tríada de Kepler</h3>
+                    <p class="text-gray-500 text-sm mb-4">Mercurio, Tierra, Júpiter (favoritos de Kepler)</p>
+                    <div class="flex gap-2">
+                        <span class="w-6 h-6 rounded-full bg-gray-500"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-blue-500"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-amber-200"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                    <h3 class="font-medium mb-2">🎵 Quinta Perfecta</h3>
+                    <p class="text-gray-500 text-sm mb-4">Tierra + Júpiter (intervalo consonante)</p>
+                    <div class="flex gap-2">
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-blue-500"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-amber-200"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                    <h3 class="font-medium mb-2">😈 Tritono</h3>
+                    <p class="text-gray-500 text-sm mb-4">Mercurio + Marte (disonante, "diabólico")</p>
+                    <div class="flex gap-2">
+                        <span class="w-6 h-6 rounded-full bg-gray-500"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-red-600"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                        <span class="w-6 h-6 rounded-full bg-gray-800 border border-gray-700"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Legacy -->
+    <section class="max-w-6xl mx-auto px-6 py-16">
+        <h2 class="text-3xl font-medium mb-10">
+            <span class="text-amber-400">06.</span> El Legado de Kepler
+        </h2>
+
+        <div class="grid md:grid-cols-2 gap-12">
+            <div>
+                <h3 class="text-xl font-medium mb-4 text-gray-200">Lo que descubrió (sin querer)</h3>
+                <p class="text-gray-400 leading-relaxed mb-4">
+                    Mientras buscaba la "música celestial", Kepler descubrió su
+                    <strong class="text-white">Tercera Ley</strong>: el cuadrado del período orbital
+                    es proporcional al cubo del semieje mayor.
+                </p>
+                <div class="bg-gray-900 border border-amber-500/30 rounded-xl p-6 text-center">
+                    <div class="text-3xl font-mono text-amber-400 mb-2">T² = a³</div>
+                    <p class="text-gray-500 text-sm">Esta ley permitió a Newton formular la gravitación universal</p>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-medium mb-4 text-gray-200">Influencia cultural</h3>
+                <ul class="space-y-4 text-gray-400">
+                    <li class="flex items-start gap-3">
+                        <span class="text-amber-400">→</span>
+                        <span><strong class="text-white">Gustav Holst</strong> compuso "Los Planetas" (1914-1917) inspirado en ideas astrológicas similares</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="text-amber-400">→</span>
+                        <span><strong class="text-white">Carl Sagan</strong> incluyó sonificaciones planetarias en "Cosmos"</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="text-amber-400">→</span>
+                        <span>La NASA ha creado múltiples <strong class="text-white">sonificaciones de datos espaciales</strong> siguiendo este concepto</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="text-amber-400">→</span>
+                        <span>El concepto de "música de las esferas" sigue inspirando <strong class="text-white">arte generativo y música algorítmica</strong></span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="bg-gradient-to-t from-amber-500/5 to-transparent py-16">
+        <div class="max-w-4xl mx-auto px-6 text-center">
+            <h2 class="text-3xl font-medium mb-6">Experimenta la Visión de Kepler</h2>
+            <p class="text-gray-400 mb-8">
+                400 años después, su sueño de escuchar el cosmos es posible.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="index.html" class="inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-gray-900 font-medium px-8 py-4 rounded-lg transition-all transform hover:scale-105">
+                    <span>▶</span> Abrir Simulación
+                </a>
+                <a href="https://github.com/cjlkaiser-cpu/harmonices-mundi" target="_blank" class="inline-flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white font-medium px-8 py-4 rounded-lg transition-all">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    Ver en GitHub
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-800 py-8">
+        <div class="max-w-6xl mx-auto px-6 text-center text-gray-500 text-sm">
+            <p>Simulación basada en "Harmonices Mundi" de Johannes Kepler (1619)</p>
+            <p class="mt-2">Creado con física real, Web Audio API y mucha curiosidad</p>
+        </div>
+    </footer>
+</body>
+</html>
