@@ -528,6 +528,27 @@
             border-radius: 50%;
             cursor: pointer;
         }
+
+        /* Indicadores visuales modo NASA */
+        .planet-channel.has-nasa .planet-freq::after {
+            content: " 🛰️";
+        }
+
+        .planet-channel.no-nasa .planet-freq::after {
+            content: " (est.)";
+            opacity: 0.5;
+            font-size: 0.8em;
+        }
+
+        .mode-btn[data-mode="nasa"] {
+            background: linear-gradient(135deg, #1a1a3e, #0d2140);
+        }
+
+        .mode-btn[data-mode="nasa"].active {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.1));
+            border-color: #3b82f6;
+            color: #60a5fa;
+        }
     </style>
 </head>
 <body>
@@ -554,6 +575,7 @@
                 <button class="mode-btn active" data-mode="kepler">Kepler 1619</button>
                 <button class="mode-btn" data-mode="realtime">Tiempo Real</button>
                 <button class="mode-btn" data-mode="musical">Musical</button>
+                <button class="mode-btn" data-mode="nasa">NASA 🛰️</button>
             </div>
 
             <div class="master-volume">
@@ -678,7 +700,10 @@
                 // Kepler: tercera menor
                 keplerMin: 98.00, keplerMax: 116.54,   // Sol2 → La#2
                 baseFreq: 196.00,  // Sol3
-                waveform: 'triangle'
+                waveform: 'triangle',
+                // NASA Voyager 1 (1979) - picos detectados en PSD
+                nasaPeaks: [258.4, 409.1],
+                nasaWaveform: 'sawtooth'
             },
             {
                 nombre: 'Saturno',
@@ -689,7 +714,10 @@
                 // Kepler: tercera mayor
                 keplerMin: 73.42, keplerMax: 92.50,    // Re2 → Fa#2
                 baseFreq: 146.83,  // Re3
-                waveform: 'triangle'
+                waveform: 'triangle',
+                // NASA Voyager 1 (1980) - picos detectados en PSD
+                nasaPeaks: [247.6, 53.8, 360.7],
+                nasaWaveform: 'sawtooth'
             },
             {
                 nombre: 'Urano',
@@ -699,7 +727,10 @@
                 // No conocido por Kepler - extrapolado
                 keplerMin: 55.00, keplerMax: 61.74,
                 baseFreq: 110.00,  // La2
-                waveform: 'triangle'
+                waveform: 'triangle',
+                // NASA Voyager 2 (1986) - picos detectados en PSD
+                nasaPeaks: [199.2, 59.2, 403.7],
+                nasaWaveform: 'triangle'
             },
             {
                 nombre: 'Neptuno',
@@ -709,7 +740,10 @@
                 // No conocido por Kepler - extrapolado
                 keplerMin: 41.20, keplerMax: 43.65,
                 baseFreq: 82.41,   // Mi2
-                waveform: 'sawtooth'
+                waveform: 'sawtooth',
+                // NASA Voyager 2 (1989) - picos detectados en PSD
+                nasaPeaks: [199.2, 398.4],
+                nasaWaveform: 'sawtooth'
             }
         ];
 
@@ -741,6 +775,10 @@
         let analyserData = null;
         let masterGain = null;
         const planetStates = planetas.map(() => ({ enabled: true, volume: 0.7 }));
+
+        // NASA oscillators (múltiples picos por planeta)
+        const nasaOscillators = {};  // { jupiter: [osc1, osc2], ... }
+        const nasaGains = {};
 
         // Presets
         const presets = {
@@ -786,6 +824,29 @@
 
                 oscillators[i] = osc;
                 gains[i] = gain;
+
+                // Crear osciladores NASA si el planeta tiene picos detectados
+                if (planeta.nasaPeaks) {
+                    const name = planeta.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    nasaOscillators[name] = [];
+                    nasaGains[name] = [];
+
+                    planeta.nasaPeaks.forEach((freq) => {
+                        const nasaOsc = audioCtx.createOscillator();
+                        nasaOsc.type = planeta.nasaWaveform || 'sawtooth';
+                        nasaOsc.frequency.value = freq;
+
+                        const nasaGain = audioCtx.createGain();
+                        nasaGain.gain.value = 0;  // Mute inicial
+
+                        nasaOsc.connect(nasaGain);
+                        nasaGain.connect(masterGain);
+                        nasaOsc.start();
+
+                        nasaOscillators[name].push(nasaOsc);
+                        nasaGains[name].push(nasaGain);
+                    });
+                }
             });
 
             audioStarted = true;
@@ -843,14 +904,46 @@
             planetas.forEach((planeta, i) => {
                 const pos = getOrbitalPosition(planeta.a, planeta.e, planeta.T, simDays);
                 const freq = getFrequency(planeta, pos, i);
+                const name = planeta.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                const hasNASA = !!planeta.nasaPeaks;
 
-                oscillators[i].frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
+                if (mode === 'nasa') {
+                    if (hasNASA) {
+                        // Silenciar oscilador Kepler
+                        gains[i].gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
 
-                const targetGain = planetStates[i].enabled && running
-                    ? planetStates[i].volume * masterVolume * 0.15
-                    : 0;
+                        // Activar osciladores NASA (múltiples picos)
+                        const targetGain = planetStates[i].enabled && running
+                            ? (planetStates[i].volume * masterVolume * 0.12) / planeta.nasaPeaks.length
+                            : 0;
 
-                gains[i].gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.05);
+                        nasaGains[name].forEach(g => {
+                            g.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.05);
+                        });
+                    } else {
+                        // Planetas interiores: síntesis atenuada 30%
+                        oscillators[i].frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
+                        const targetGain = planetStates[i].enabled && running
+                            ? planetStates[i].volume * masterVolume * 0.05  // 30% de 0.15
+                            : 0;
+                        gains[i].gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.05);
+                    }
+                } else {
+                    // Modos Kepler/Realtime/Musical: silenciar NASA
+                    if (hasNASA) {
+                        nasaGains[name].forEach(g => {
+                            g.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+                        });
+                    }
+
+                    oscillators[i].frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
+
+                    const targetGain = planetStates[i].enabled && running
+                        ? planetStates[i].volume * masterVolume * 0.15
+                        : 0;
+
+                    gains[i].gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.05);
+                }
             });
         }
 
@@ -1080,15 +1173,24 @@
             planetas.forEach((planeta, i) => {
                 const pos = getOrbitalPosition(planeta.a, planeta.e, planeta.T, simDays);
                 const freq = getFrequency(planeta, pos, i);
+                const hasNASA = !!planeta.nasaPeaks;
 
                 const freqEl = document.querySelector(`#channel-${i} .planet-freq`);
                 if (freqEl) {
-                    freqEl.textContent = `${freq.toFixed(1)} Hz`;
+                    // Mostrar frecuencia NASA en modo NASA
+                    if (mode === 'nasa' && hasNASA) {
+                        freqEl.textContent = `${planeta.nasaPeaks[0].toFixed(0)} Hz`;
+                    } else {
+                        freqEl.textContent = `${freq.toFixed(1)} Hz`;
+                    }
                 }
 
                 const channelEl = document.getElementById(`channel-${i}`);
                 if (channelEl) {
                     channelEl.classList.toggle('sounding', planetStates[i].enabled && running);
+                    // Indicadores NASA
+                    channelEl.classList.toggle('has-nasa', mode === 'nasa' && hasNASA);
+                    channelEl.classList.toggle('no-nasa', mode === 'nasa' && !hasNASA);
                 }
             });
 
